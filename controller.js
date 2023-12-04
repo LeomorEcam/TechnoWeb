@@ -1,4 +1,3 @@
-//import {Model} from './model.js';
 const Model = require('./model.js');
 const db = require('./test');
 let express = require("express");
@@ -20,13 +19,15 @@ router.use(session({
     saveUninitialized: true
 }));
 
-/**db.getAllMonsters().then(data => {console.log(data);});
+/** ===============================================> a utiliser avec le test.js
+ * db.getAllMonsters().then(data => {console.log(data);});
 
 router.get('/',(request,response)=> {
     db.getAllMonsters().then(data => {console.log(data);});
 });**/
 router.get('/',(request,response)=>{
-    /**console.log("get");
+    /** ===========================================> le .ejs lié ne recoit rien
+     * console.log("get");
     request.session.lessonList = [];
     console.log("hhhhhhhhhhhhhhhhhh");
     console.log(model.getLessonDB("select * from trainingtab;",request.session.lessonList));
