@@ -1,0 +1,41 @@
+<html>
+<head>
+    <link rel="stylesheet" href="./views/css/index.css">
+    <title>Fetch</title>
+</head>
+<body>
+    <h1>IT Academy</h1>
+    <h2>Panier</h2>
+    <form name="listeFormation" class="encodage" action="/" method="POST">
+        <input type="submit" name="button" class="button" value="Finaliser l'inscription">
+        <input type="submit" name="button" class="button" value="Retourner au catalogue de formation">
+    </form>
+    <form name="listeFormation" class="encodage" action="/" method="POST">
+        <label for="Id" class="attributForm id">Id</label>
+        <label for="Nom" class="attributForm name">Nom</label>
+        <label for="Prix" class="attributForm price">Prix</label>
+        <label for="Debut" class="attributForm begin">Début</label>
+        <label for="Fin" class="attributForm end">Fin</label>
+        <label for="Button" class="caseNothing name">........</label>
+    </form>
+    <% for(let i = 0; i< tabMap.length;i++){ %>
+        <form name= <%=`formation${i}`%> class="formations" action="/" method="POST">
+            <label for="Id"  class="formGeneral id"><%=`${tabMap[i].Id}`%> </label>
+            <input type="hidden" name="Id" value=<%=`${tabMap[i].Id}`%>>
+            <label for="Nom" class="formGeneral name"><%=`${tabMap[i].Name}`%></label>
+            <input type="hidden" name="Nom" value=<%=`${tabMap[i].Name}`%>>
+            <label for="Prix" class=" formGeneral price"><%=`${tabMap[i].Price}`%></label>
+            <input type="hidden" name="Prix" value=<%=`${tabMap[i].Price}`%>>
+            <label for="Debut" class="formGeneral begin"><%=`${tabMap[i].Begin.getUTCDate()+1}-${tabMap[i].Begin.getUTCMonth()+1}-${tabMap[i].Begin.getFullYear()}`%></label>
+            <input type="hidden" name="Debut" value=<%=`${tabMap[i].Begin.getUTCDate()+1}-${tabMap[i].Begin.getUTCMonth()+1}-${tabMap[i].Begin.getFullYear()}`%>>
+            <label for="Fin" class="formGeneral end"><%=`${tabMap[i].End.getUTCDate()+1}-${tabMap[i].End.getUTCMonth()+1}-${tabMap[i].End.getFullYear()}`%></label>
+            <input type="hidden" name="Fin" value=<%=`${tabMap[i].End.getUTCDate()+1}-${tabMap[i].End.getUTCMonth()+1}-${tabMap[i].End.getFullYear()}`%>>
+            <a class="caseButton">
+                <input type="submit" name="button" class="buttonForm" value="Supprimer">
+            </a>
+            
+        </form>
+        <%};%>
+
+</body>
+</html>

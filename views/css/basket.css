@@ -1,0 +1,86 @@
+
+body{
+    margin-top: 50px;
+    margin-left: 100px;
+    margin-right: 100px;
+}
+h1{
+    font-size: 40px;
+    color: rgb(51, 51, 105);
+    text-align: center;
+}
+h2{
+    font-size: 30px;
+    color: rgb(51, 51, 105);
+}
+.buttonsLine{
+    margin-bottom: 10px;
+}
+.button{
+    font-size: 20px;
+    font-weight: bold;
+    color: rgb(32, 90, 32);
+    padding-bottom: 5px;
+    display: inline-block;
+}
+.attributForm{
+    border: 1px solid black;
+    font-size: 20px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    height: 25px;
+    display: inline-block;
+}
+.formations{
+    margin-bottom: 5px;
+}
+.formGeneral{
+    border: 1px solid black;
+    font-size: 20px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    height: 25px;
+    text-align: center;
+    display: inline-block;
+}
+.id{
+    width: 30px;
+
+}
+.name{
+    width: 140px;
+    text-align: left;
+
+}
+.price{
+    width: 70px;
+
+}
+.begin{
+    width: 140px;
+
+}
+.end{
+    width: 140px;
+
+}
+.buttonForm{
+    width: 140px;
+    margin: 2px;
+    margin-left: 5px;
+    margin-right: 5px;
+    color: rgb(32, 90, 32);
+}
+.caseNothing{
+    width: 150px;
+    height: 30px;
+    padding-top: 5px;
+    border: 1px solid black;
+    display: inline-block;
+    font-size: 20px;
+    color: white;
+}
