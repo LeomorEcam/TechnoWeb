@@ -1,43 +1,23 @@
 const Model = require('./model.js');
-const db = require('./test');
 let express = require("express");
 let router = express.Router();
 router.use(express.static('.'));    //dossier
-
 let model = new Model.Model();
 let session = require('express-session');
+
 router.use(session({
     secret: 'leoSecret',
     resave: false,
     saveUninitialized: true
 }));
-//fonctionne
-/**router.get('/',async function (request,response){
-    let tab = await model.getLessonDB3();
-    response.render('index.ejs',{tabMap: tab,namePseudo: undefined});
-});**/
 
-/** ===============================================> a utiliser avec le test.js
- * db.getAllMonsters().then(data => {console.log(data);});
-
-router.get('/',(request,response)=> {
-    db.getAllMonsters().then(data => {console.log(data);});
-});**/
 router.get('/',async function(request,response){
-    /** ===========================================> le .ejs lié ne recoit rien
-     * console.log("get");
-    request.session.lessonList = [];
-    console.log("hhhhhhhhhhhhhhhhhh");
-    console.log(model.getLessonDB("select * from trainingtab;",request.session.lessonList));
-    console.log(model.db);
-
-    response.render('index.ejs',{tabMap:model.getLessonDB2("select * from trainingtab;",request.session.lessonList), namePseudo: undefined});
-**/
     request.session.lessonList = [];
     request.session.finalSubscribe = false;
     let tab = await model.getLessonDB("select * from trainingtab;",request.session.lessonList);
     response.render('index.ejs',{tabMap:tab, namePseudo: undefined});
 });
+
 router.post('/',async function(request,response){
     console.log("post");
     console.log(request.body);
@@ -136,6 +116,7 @@ router.post('/',async function(request,response){
             break;
         case 'Enregistrer':
             request.session.pseudo = request.body.pseudo;
+            
         default:
             if(request.session.pseudo != undefined){
                 rowsSome = await model.isSomeoneInDB("select * from usertab where pseudo = (?);",request.session.pseudo);

@@ -1,4 +1,3 @@
-//import taskObj from "js/script.js";
 let express = require("express");
 let app = express();
 app.use(express.urlencoded({extended: true}));

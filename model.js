@@ -1,43 +1,28 @@
-const mariadb = require("mariadb");
-const connecte = mariadb.createPool({
-    host: 'localhost', 
-    user:'UserDB', 
-    password: '1234',
-    database:'ITAcademyDB'
-});
-
-//creer 2 fonction, et mettre des fonctions génériques 
-
-function getLessonDB2(dbRequest,list, pseudo=undefined){
-    //connecte.connect();
-    return new Promise((resolve, reject) => {
-        // This question mark syntax will be explained below.
-        const sql = "select * from trainingtab;";
-        
-        connecte.query(sql,function (err, results, fields) {
-            if (err) {
-                return reject(err);
-            }
-            console.log(results);
-            return resolve(results);
-        });
-    });
-};
 class Model{
+    #mariadb;
+    #connection;
 
+    /**
+     * Constructor of Model, initialise DB connection.
+     */
     constructor(){
-        this.mariadb = require("mariadb");
-        this.connection = this.mariadb.createPool({
+        this.#mariadb = require("mariadb");
+        this.#connection = this.#mariadb.createPool({
             host: 'localhost', 
             user:'UserDB', 
             password: '1234',
             database:'ITAcademyDB'
         });
-        this.db = [];
     }
 
+    /**
+     * Private method, does a select request query and return the result.
+     * @param {String} dbRequest the query to send.
+     * @param {String} pseudo the pseudo of person connected, if he's not already connected, can be undefined.
+     * @returns the answer of the query.
+     */
     async #selectQueryDB(dbRequest, pseudo=undefined){
-        let conn = await this.connection.getConnection();
+        let conn = await this.#connection.getConnection();
         if(pseudo != undefined){
             const rows = conn.query(dbRequest,[pseudo]);
             conn.end();
@@ -49,19 +34,12 @@ class Model{
             return rows;
         }
     }
-    async getLessonDB3(pseudo=undefined){
-        let conn = await this.connection.getConnection();
-            const sql = "select * from trainingtab;";
-            const tab = conn.query(sql);
-            conn.end();
-            return tab;
-    };
     /**
-     * prend un string de la requete et le pseudo et retourne un tableau des différents lessons
-     * le controlleur utilisera pour faire le render
-     * @param {String} dbRequest 
-     * @param {boolean} shearchNotHere
-     * @param {String} pseudo 
+     * Take a String request, the list of lesson's id ad return a tab of differents lessons to print.
+     * Controller'll use that to do the render
+     * @param {String} dbRequest the query to send.
+     * @param {boolean} shearchNotHere used if we have to find element on request with list (false) or if we have to fin element on request not in list (true).
+     * @param {String} pseudo the pseudo of person connected, if he's not already connected, can be undefined.
      */
     async getLessonDB(dbRequest,list, pseudo=undefined, shearchNotHere=false){
 
@@ -78,9 +56,10 @@ class Model{
         return tabDB;
     };
     /**
-     * 
-     * @param {String} dbRequest 
-     * @param {String} pseudo 
+     * Find if pseudo is already on DB
+     * @param {String} dbRequest the query to send.
+     * @param {String} pseudo the pseudo of person connected.
+     * @returns a boolean if is it on DB or not.
      */
     async isSomeoneInDB(dbRequest, pseudo){
         const rows = this.#selectQueryDB(dbRequest,pseudo);
@@ -93,16 +72,16 @@ class Model{
     };
 
     /**
-     * 
-     * @param {String} dbRequest 
-     * @param {String} pseudo 
-     * @param {Int16} id 
+     * Does a insert request query for a pseudo's lesson.
+     * @param {String} dbRequest the query to send.
+     * @param {String} pseudo the pseudo of person connected.
+     * @param {Int16} id the id of lesson.
      */
     async insertIntoDB(dbRequest, pseudo, id){
-        let conn = await this.connection.getConnection();
-        const done = conn.query(dbRequest, [pseudo,id]);
+        let conn = await this.#connection.getConnection();
+        conn.query(dbRequest, [pseudo,id]);
         conn.end();
     }
 };
-module.exports = {getLessonDB2,Model};
+module.exports = {Model};
 //module.exports = Model;
