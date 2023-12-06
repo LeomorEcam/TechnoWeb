@@ -6,6 +6,8 @@ const connecte = mariadb.createPool({
     database:'ITAcademyDB'
 });
 
+//creer 2 fonction, et mettre des fonctions génériques 
+
 function getLessonDB2(dbRequest,list, pseudo=undefined){
     //connecte.connect();
     return new Promise((resolve, reject) => {
@@ -34,132 +36,60 @@ class Model{
         this.db = [];
     }
 
-    getLessonDB2(dbRequest,list, pseudo=undefined){
-        //connecte.connect();
-        return new Promise((resolve, reject) => {
-            // This question mark syntax will be explained below.
+    async #selectQueryDB(dbRequest, pseudo=undefined){
+        let conn = await this.connection.getConnection();
+        if(pseudo != undefined){
+            const rows = conn.query(dbRequest,[pseudo]);
+            conn.end();
+            return rows;
+        }
+        else{
+            const rows = conn.query(dbRequest);
+            conn.end();
+            return rows;
+        }
+    }
+    async getLessonDB3(pseudo=undefined){
+        let conn = await this.connection.getConnection();
             const sql = "select * from trainingtab;";
-            
-            connecte.query(sql,function (err, results, fields) {
-                if (err) {
-                    return reject(err);
-                }
-                console.log(results);
-                return resolve(results);
-            });
-        });
-        /**let conn = await this.connection.getConnection();
-        let tabDB=[];
-        try {
-            if(pseudo != undefined){
-                const rows = await conn.query(dbRequest,[pseudo]);
-                console.log(rows);
-                
-                rows.forEach(element => {
-                    if(list.find((el) => el == element.Id) ===undefined){
-                        tabDB.push(element);
-                    }
-                });
-                return tabDB;
-            }
-            else{
-                const rows = await conn.query(dbRequest);
-                console.log(rows);
-                //let tabDB=[];
-                rows.forEach(element => {
-                    if(list.find((el) => el == element.Id) ===undefined){
-                        //tabDB.push(element);
-                        tabDB.push({"Id":element.Id,
-                                    "Name":element.Name,
-                                    "Price":element.Price,
-                                    "Begin":element.Begin,
-                                    "End":element.End});
-                        this.db.push({"Id":element.Id,
-                        "Name":element.Name,
-                        "Price":element.Price,
-                        "Begin":element.Begin,
-                        "End":element.End});
-                    }
-                });
-                console.log(tabDB);
-                return tabDB;
-            }
-        } catch (err) {
-            throw err;
-        } finally {
-            if (conn) return conn.end();
-        }**/
-      }
-
+            const tab = conn.query(sql);
+            conn.end();
+            return tab;
+    };
     /**
      * prend un string de la requete et le pseudo et retourne un tableau des différents lessons
      * le controlleur utilisera pour faire le render
      * @param {String} dbRequest 
+     * @param {boolean} shearchNotHere
      * @param {String} pseudo 
      */
-    getLessonDB(dbRequest,list, pseudo=undefined){
-        let tabDB=[];
-        this.connection.getConnection().then(conn => {
-            if(pseudo != undefined){
-                conn.query(dbRequest,[pseudo])
-                .then((rows) => {
-                    console.log("verif");
-                    console.log(rows);
-                    let tabDB=[];
-                    rows.forEach(element => {
-                        if(list.find((el) => el == element.Id) ===undefined){
-                            tabDB.push(element);
-                        }
-                    });
-                    return tabDB;
-                })
+    async getLessonDB(dbRequest,list, pseudo=undefined, shearchNotHere=false){
+
+        const rows= await this.#selectQueryDB(dbRequest,pseudo);
+        let tabDB = [];
+        rows.forEach(element => {
+            if(!shearchNotHere && list.find((el) => el == element.Id) ===undefined){
+                tabDB.push(element);
             }
-            else{
-                conn.query(dbRequest)
-                .then((rows) => {
-                    //let tabDB=[];
-                    rows.forEach(element => {
-                        if(list.find((el) => el == element.Id) ===undefined){
-                            tabDB.push({"Id":element.Id,
-                            "Name":element.Name,
-                            "Price":element.Price,
-                            "Begin":element.Begin,
-                            "End":element.End});
-                        }
-                    });
-                    
-                    //console.log(tabDB);
-                    //return tabDB;
-                })
-                .finally((a) => {
-                    conn.end();
-                    console.log("zzzzzzzzzzzzzzz");
-                    console.log(tabDB);
-                    
-                    return tabDB;
-                });
+            else if(shearchNotHere && list.find((el) => el == element.Id) !=undefined){
+                tabDB.push(element);
             }
         });
+        return tabDB;
     };
     /**
      * 
      * @param {String} dbRequest 
      * @param {String} pseudo 
      */
-    isSomeoneInDB(dbRequest, pseudo){
-        this.connection.getConnection().then(conn => {
-            conn.query("select * from usertab where pseudo = (?);",[request.session.pseudo])
-            .then((rows) => {
-                if(rows.length == 0){
-                    return false;
-                }
-                else{
-                    return true;
-                }
-            }).finally((a)=> {
-                conn.end();
-            });
-        });
+    async isSomeoneInDB(dbRequest, pseudo){
+        const rows = this.#selectQueryDB(dbRequest,pseudo);
+        if(rows.length == 0){
+            return false;
+        }
+        else{
+            return true;
+        }
     };
 
     /**
@@ -168,13 +98,10 @@ class Model{
      * @param {String} pseudo 
      * @param {Int16} id 
      */
-    insertIntoDB(dbRequest, pseudo, id){
-        connection.getConnection().then(conn => {
-            conn.query(dbRequest, [pseudo,id])
-            .then((rows) => {
-            })
-            .finally((a) => conn.end());
-        });;
+    async insertIntoDB(dbRequest, pseudo, id){
+        let conn = await this.connection.getConnection();
+        const done = conn.query(dbRequest, [pseudo,id]);
+        conn.end();
     }
 };
 module.exports = {getLessonDB2,Model};

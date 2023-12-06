@@ -5,10 +5,17 @@
 </head>
 <body>
     <h1>IT Academy</h1>
+    <% if(finishStep){%>
+        <h4> Commencez par vous connecter </h4>
+    <% } %>
     <h2>Entrer votre pseudo</h2>
     <form name="listeFormation" class="encodage" action="/" method="POST">
         <input for="Pseudo" type="text" name="pseudo">
-        <input type="submit" name="button" class="buttonForm" value="Enregistrer">
+        <% if(finishStep){%>
+            <input type="submit" name="button" class="buttonForm" value="Enregistrer et finaliser l'inscription">
+        <% }else{ %>
+            <input type="submit" name="button" class="buttonForm" value="Enregistrer">
+        <% } %>
     </form>
 
 </body>

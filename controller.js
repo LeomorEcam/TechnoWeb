@@ -3,21 +3,19 @@ const db = require('./test');
 let express = require("express");
 let router = express.Router();
 router.use(express.static('.'));    //dossier
-var mariadb = require("mariadb");
-const connection = mariadb.createPool({
-    host: 'localhost', 
-    user:'UserDB', 
-    password: '1234',
-    database:'ITAcademyDB'
-});
 
-//let model = new Model();
+let model = new Model.Model();
 let session = require('express-session');
 router.use(session({
     secret: 'leoSecret',
     resave: false,
     saveUninitialized: true
 }));
+//fonctionne
+/**router.get('/',async function (request,response){
+    let tab = await model.getLessonDB3();
+    response.render('index.ejs',{tabMap: tab,namePseudo: undefined});
+});**/
 
 /** ===============================================> a utiliser avec le test.js
  * db.getAllMonsters().then(data => {console.log(data);});
@@ -25,7 +23,7 @@ router.use(session({
 router.get('/',(request,response)=> {
     db.getAllMonsters().then(data => {console.log(data);});
 });**/
-router.get('/',(request,response)=>{
+router.get('/',async function(request,response){
     /** ===========================================> le .ejs lié ne recoit rien
      * console.log("get");
     request.session.lessonList = [];
@@ -36,28 +34,21 @@ router.get('/',(request,response)=>{
     response.render('index.ejs',{tabMap:model.getLessonDB2("select * from trainingtab;",request.session.lessonList), namePseudo: undefined});
 **/
     request.session.lessonList = [];
-    connection.getConnection().then(conn => {
-        conn.query("select * from trainingtab;")
-        .then((rows) => {
-            console.log(rows);
-            let tabDB=[];
-            rows.forEach(element => {
-                tabDB.push(element);
-            });
-            response.render('index.ejs',{tabMap:tabDB, namePseudo: undefined});
-        })
-        .finally((a) => conn.end());
-    });;
+    request.session.finalSubscribe = false;
+    let tab = await model.getLessonDB("select * from trainingtab;",request.session.lessonList);
+    response.render('index.ejs',{tabMap:tab, namePseudo: undefined});
 });
-router.post('/',(request,response)=>{
+router.post('/',async function(request,response){
     console.log("post");
     console.log(request.body);
     console.log(request.session);
     let list = request.session.lessonList;
     let pseudo = request.session.pseudo;
+    let rows = [];
+    let rowsSomeone = [];
     switch(request.body.button){
         case 'Se connecter':
-            response.render('connexion.ejs');
+            response.render('connexion.ejs',{finishStep: request.session.finalSubscribe});
             break;
         case "S'inscrire":
             console.log(request.body);
@@ -65,71 +56,34 @@ router.post('/',(request,response)=>{
             if(list.find((element) => element == request.body.Id) === undefined){
                 request.session.lessonList.push(request.body.Id);
             }
-
-            connection.getConnection().then(conn => {
-                if(request.session.pseudo != undefined){
-                    conn.query("select * from usertab where pseudo = (?);",[request.session.pseudo])
-                    .then((rows) => {
-                        if(rows.length == 0){
-                            conn.query(" select * from trainingtab;")
-                            .then((rows) => {
-                                console.log("verif");
-                                console.log(rows);
-                                let tabDB=[];
-                                rows.forEach(element => {
-                                    if(list.find((el) => el == element.Id) ===undefined){
-                                        tabDB.push(element);
-                                    }
-                                });
-                                response.render('index.ejs',{tabMap:tabDB,namePseudo:pseudo});
-                            })
-                        }
-                        else{
-                            conn.query("select * from trainingtab where id not in (select trainingid from usertab u left join trainingtab t on u.trainingid = t.id where pseudo = (?));",[request.session.pseudo])
-                            .then((rows) => {
-                                console.log("verif");
-                                console.log(rows);
-                                let tabDB=[];
-                                rows.forEach(element => {
-                                    if(list.find((el) => el == element.Id) ===undefined){
-                                        tabDB.push(element);
-                                    }
-                                });
-                                response.render('index.ejs',{tabMap:tabDB,namePseudo:pseudo});
-                            })
-                        }
-                    })
-                    .finally((a) => conn.end());
+            if(request.session.pseudo != undefined){
+                rowsSomeone = await model.isSomeoneInDB("select * from usertab where pseudo = (?);", request.session.pseudo);
+                if(rowsSomeone.length == 0){
+                    let rows = await model.getLessonDB("select * from trainingtab;",request.session.lessonList);
+                    response.render('index.ejs',{tabMap:rows,namePseudo:pseudo});
                 }
                 else{
-                    conn.query("select * from trainingtab;")
-                    .then((rows) => {
-                        let tabDB=[];
-                        rows.forEach(element => {
-                            if(list.find((el) => el == element.Id) ===undefined){
-                                tabDB.push(element);
-                            }
-                        });
-                        response.render('index.ejs',{tabMap:tabDB,namePseudo:pseudo});
-                    })
-                    .finally((a) => conn.end());
+                    rows = await model.getLessonDB("select * from trainingtab where id not in (select trainingid from usertab u left join trainingtab t on u.trainingid = t.id where pseudo = (?));",request.session.lessonList,request.session.pseudo);
+                    response.render('index.ejs',{tabMap:rows,namePseudo:pseudo});
                 }
-            });
+            }
+            else{
+                rows = await model.getLessonDB("select * from trainingtab;",request.session.lessonList);
+                response.render('index.ejs',{tabMap:rows,namePseudo:pseudo});
+            }
             break;
         case "Voir le panier":
-            connection.getConnection().then(conn => {
-                conn.query("select * from trainingtab;")
-                .then((rows) => {
-                    let tabDB=[];
-                    rows.forEach(element => {
-                        if(list.find((el) => el == element.Id)!= undefined){
-                            tabDB.push(element);
-                        }
-                    });
-                    response.render('basket.ejs',{tabMap:tabDB});
-                })
-                .finally((a) => conn.end());
-            });;
+            rows = await model.getLessonDB("select * from trainingtab;",[]);
+            let tabDB = [];
+            console.log(request.session.lessonList);
+            console.log(rows);
+            rows.forEach(element => {
+                if(request.session.lessonList.find((el) => el == element.Id)!= undefined){
+                    tabDB.push(element);
+                }
+            });
+            console.log(tabDB);
+            response.render('basket.ejs',{tabMap:tabDB});
             break;
         case "Supprimer":
             for (let index = 0; index < request.session.lessonList.length; index++) {
@@ -138,138 +92,66 @@ router.post('/',(request,response)=>{
                     break;
                 }
             }
-            connection.getConnection().then(conn => {
-                conn.query("select * from trainingtab;")
-                .then((rows) => {
-                    let tabDB=[];
-                    rows.forEach(element => {
-                        if(list.find((el) => el == element.Id)!= undefined){
-                            tabDB.push(element);
-                        }
-                    });
-                    response.render('basket.ejs',{tabMap:tabDB});
-                })
-                .finally((a) => conn.end());
-            });;
+            rows = await model.getLessonDB("select * from trainingtab;",request.session.lessonList,undefined,true);
+            response.render('basket.ejs',{tabMap:rows});
             break;
         case "Finaliser l'inscription":
             if(request.session.pseudo != undefined){
-                request.session.lessonList.forEach(element => {
-                    connection.getConnection().then(conn => {
-                        conn.query("insert into Usertab(Pseudo, TrainingId) values(?,?)", [request.session.pseudo,element])
-                        .then((rows) => {
-                            request.session.lessonList = [];
-                        })
-                        .finally((a) => conn.end());
-                    });;
-                });
+                for (let i = 0; i<request.session.lessonList.length;i++){
+                    await model.insertIntoDB("insert into Usertab(Pseudo, TrainingId) values(?,?);", request.session.pseudo,request.session.lessonList[i]);
+                }
+                request.session.lessonList = [];
                 response.render('finish.ejs');
-                
+            }
+            else{
+                request.session.finalSubscribe = true;
+                response.render('connexion.ejs',{finishStep: request.session.finalSubscribe});
             }
             break;
+        case "Enregistrer et finaliser l'inscription":
+            request.session.pseudo = request.body.pseudo;
+            for (let i = 0; i<request.session.lessonList.length;i++){
+                await model.insertIntoDB("insert into Usertab(Pseudo, TrainingId) values(?,?);", request.session.pseudo,request.session.lessonList[i]);
+            }
+            request.session.lessonList = [];
+            response.render('finish.ejs');
+
+            break;
         case "Retourner au catalogue de formation":
-            connection.getConnection().then(conn => {
-                if(request.session.pseudo != undefined){
-                    conn.query("select * from usertab where pseudo = (?);",[request.session.pseudo])
-                    .then((rows) => {
-                        if(rows.length == 0){
-                            conn.query(" select * from trainingtab;")
-                            .then((rows) => {
-                                console.log("verif");
-                                console.log(rows);
-                                let tabDB=[];
-                                rows.forEach(element => {
-                                    if(list.find((el) => el == element.Id) ===undefined){
-                                        tabDB.push(element);
-                                    }
-                                });
-                                response.render('index.ejs',{tabMap:tabDB,namePseudo:pseudo});
-                            })
-                        }
-                        else{
-                            conn.query("select * from trainingtab where id not in (select trainingid from usertab u left join trainingtab t on u.trainingid = t.id where pseudo = (?));",[request.session.pseudo])
-                            .then((rows) => {
-                                console.log("verif");
-                                console.log(rows);
-                                let tabDB=[];
-                                rows.forEach(element => {
-                                    if(list.find((el) => el == element.Id) ===undefined){
-                                        tabDB.push(element);
-                                    }
-                                });
-                                response.render('index.ejs',{tabMap:tabDB,namePseudo:pseudo});
-                            })
-                        }
-                    })
-                    .finally((a) => conn.end());
+            if(request.session.pseudo != undefined){
+                rowsSome = await model.isSomeoneInDB("select * from usertab where pseudo = (?);",request.session.pseudo);
+                if(rowsSome.length == 0){
+                    rows = await model.getLessonDB("select * from trainingtab;",request.session.lessonList,undefined,true);
+                    response.render('index.ejs',{tabMap:rows,namePseudo:pseudo});
                 }
                 else{
-                    conn.query("select * from trainingtab;")
-                    .then((rows) => {
-                        let tabDB=[];
-                        rows.forEach(element => {
-                            if(list.find((el) => el == element.Id) ===undefined){
-                                tabDB.push(element);
-                            }
-                        });
-                        response.render('index.ejs',{tabMap:tabDB,namePseudo:pseudo});
-                    })
-                    .finally((a) => conn.end());
+                    rows = await model.getLessonDB("select * from trainingtab where id not in (select trainingid from usertab u left join trainingtab t on u.trainingid = t.id where pseudo = (?));",request.session.lessonList,request.session.pseudo);
+                    response.render('index.ejs',{tabMap:rows,namePseudo:pseudo});
                 }
-            });
+            }
+            else{
+                rows = await model.getLessonDB("select * from trainingtab;",request.session.lessonList);
+                response.render('index.ejs',{tabMap:rows,namePseudo:pseudo});
+            }
             break;
         case 'Enregistrer':
             request.session.pseudo = request.body.pseudo;
         default:
-            connection.getConnection().then(conn => {
-                if(request.session.pseudo != undefined){
-                    conn.query("select * from usertab where pseudo = (?);",[request.session.pseudo])
-                    .then((rows) => {
-                        if(rows.length == 0){
-                            conn.query(" select * from trainingtab;")
-                            .then((rows) => {
-                                console.log("verif");
-                                console.log(rows);
-                                let tabDB=[];
-                                rows.forEach(element => {
-                                    if(list.find((el) => el == element.Id) ===undefined){
-                                        tabDB.push(element);
-                                    }
-                                });
-                                response.render('index.ejs',{tabMap:tabDB,namePseudo:pseudo});
-                            })
-                        }
-                        else{
-                            conn.query("select * from trainingtab where id not in (select trainingid from usertab u left join trainingtab t on u.trainingid = t.id where pseudo = (?));",[request.session.pseudo])
-                            .then((rows) => {
-                                console.log("verif");
-                                console.log(rows);
-                                let tabDB=[];
-                                rows.forEach(element => {
-                                    if(list.find((el) => el == element.Id) ===undefined){
-                                        tabDB.push(element);
-                                    }
-                                });
-                                response.render('index.ejs',{tabMap:tabDB,namePseudo:pseudo});
-                            })
-                        }
-                    })
-                    .finally((a) => conn.end());
+            if(request.session.pseudo != undefined){
+                rowsSome = await model.isSomeoneInDB("select * from usertab where pseudo = (?);",request.session.pseudo);
+                if(rowsSome.length == 0){
+                    rows = await model.getLessonDB("select * from trainingtab;",request.session.lessonList);
+                    response.render('index.ejs',{tabMap:rows,namePseudo:pseudo});
                 }
                 else{
-                    conn.query("select * from trainingtab;")
-                    .then((rows) => {
-                        let tabDB=[];
-                        rows.forEach(element => {
-                            if(list.find((el) => el == element.Id) ===undefined){
-                                tabDB.push(element);
-                            }
-                        });
-                        response.render('index.ejs',{tabMap:tabDB,namePseudo:pseudo});
-                    })
-                    .finally((a) => conn.end());
+                    rows = await model.getLessonDB("select * from trainingtab where id not in (select trainingid from usertab u left join trainingtab t on u.trainingid = t.id where pseudo = (?));",request.session.lessonList,request.session.pseudo);
+                    response.render('index.ejs',{tabMap:rows,namePseudo:pseudo});
                 }
-            });
+            }
+            else{
+                rows = await model.getLessonDB("select * from trainingtab;",request.session.lessonList);
+                response.render('index.ejs',{tabMap:tabDB,namePseudo:pseudo});
+            }
     }
 });
 
