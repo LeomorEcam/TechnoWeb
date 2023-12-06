@@ -14,6 +14,7 @@ router.use(session({
 router.get('/',async function(request,response){
     request.session.lessonList = [];
     request.session.finalSubscribe = false;
+    request.session.pseudo = undefined;
     let tab = await model.getLessonDB("select * from trainingtab;",request.session.lessonList);
     response.render('index.ejs',{tabMap:tab, namePseudo: undefined});
 });
@@ -116,7 +117,7 @@ router.post('/',async function(request,response){
             break;
         case 'Enregistrer':
             request.session.pseudo = request.body.pseudo;
-            
+
         default:
             if(request.session.pseudo != undefined){
                 rowsSome = await model.isSomeoneInDB("select * from usertab where pseudo = (?);",request.session.pseudo);
